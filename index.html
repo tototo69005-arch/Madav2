@@ -1,0 +1,1061 @@
+<!DOCTYPE html>
+<html lang="fr">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>🇲🇬 Madagascar — Carnet de dépenses</title>
+<style>
+  @import url('https://fonts.googleapis.com/css2?family=DM+Serif+Display:ital@0;1&family=DM+Sans:wght@300;400;500;600&display=swap');
+
+  :root {
+    --bg: #0f1117;
+    --surface: #171c27;
+    --surface2: #1e2435;
+    --border: #2a3045;
+    --text: #e8eaf2;
+    --muted: #6b7494;
+    --accent: #e8a045;
+    --accent2: #4f9e7e;
+    --red: #e05a5a;
+    --retrait-bg: #1a2a1e;
+    --retrait-border: #2d5c3a;
+    --retrait-text: #6fcf97;
+    --day-line: #2a3045;
+    --EUR: #6b9ee8;
+    --Ar: #a078d4;
+    --CB: #e87c6b;
+    --shadow: 0 4px 24px rgba(0,0,0,0.4);
+  }
+
+  * { box-sizing: border-box; margin: 0; padding: 0; }
+
+  body {
+    background: var(--bg);
+    color: var(--text);
+    font-family: 'DM Sans', sans-serif;
+    font-size: 14px;
+    min-height: 100vh;
+  }
+
+  /* HEADER */
+  header {
+    background: var(--surface);
+    border-bottom: 1px solid var(--border);
+    padding: 20px 28px 16px;
+    display: flex;
+    align-items: flex-start;
+    justify-content: space-between;
+    gap: 20px;
+    flex-wrap: wrap;
+    position: sticky;
+    top: 0;
+    z-index: 100;
+  }
+  .header-left h1 {
+    font-family: 'DM Serif Display', serif;
+    font-size: 22px;
+    color: var(--accent);
+    letter-spacing: 0.01em;
+  }
+  .header-left p {
+    color: var(--muted);
+    font-size: 12px;
+    margin-top: 2px;
+  }
+  .header-stats {
+    display: flex;
+    gap: 24px;
+    flex-wrap: wrap;
+  }
+  .stat-box {
+    text-align: right;
+  }
+  .stat-box .label {
+    font-size: 10px;
+    color: var(--muted);
+    text-transform: uppercase;
+    letter-spacing: 0.08em;
+  }
+  .stat-box .val {
+    font-size: 16px;
+    font-weight: 600;
+    color: var(--text);
+    margin-top: 1px;
+  }
+  .stat-box .val.green { color: var(--accent2); }
+  .stat-box .val.orange { color: var(--accent); }
+  .stat-box .val.red { color: var(--red); }
+
+  /* BUTTONS */
+  .btn {
+    display: inline-flex;
+    align-items: center;
+    gap: 6px;
+    padding: 8px 16px;
+    border-radius: 8px;
+    font-family: 'DM Sans', sans-serif;
+    font-size: 13px;
+    font-weight: 500;
+    cursor: pointer;
+    border: none;
+    transition: all 0.15s;
+  }
+  .btn-primary {
+    background: var(--accent);
+    color: #0f1117;
+  }
+  .btn-primary:hover { background: #f0b060; }
+  .btn-retrait {
+    background: var(--retrait-bg);
+    color: var(--retrait-text);
+    border: 1px solid var(--retrait-border);
+  }
+  .btn-retrait:hover { background: #1f3826; }
+  .btn-ghost {
+    background: transparent;
+    color: var(--muted);
+    border: 1px solid var(--border);
+  }
+  .btn-ghost:hover { background: var(--surface2); color: var(--text); }
+  .btn-danger {
+    background: transparent;
+    color: var(--red);
+    border: 1px solid transparent;
+    padding: 4px 8px;
+    font-size: 12px;
+  }
+  .btn-danger:hover { background: rgba(224,90,90,0.1); }
+
+  /* ACTION BAR */
+  .action-bar {
+    padding: 16px 28px;
+    display: flex;
+    gap: 10px;
+    align-items: center;
+    flex-wrap: wrap;
+    border-bottom: 1px solid var(--border);
+  }
+  .action-bar .spacer { flex: 1; }
+
+  /* MODAL OVERLAY */
+  .overlay {
+    position: fixed;
+    inset: 0;
+    background: rgba(0,0,0,0.7);
+    z-index: 200;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    backdrop-filter: blur(3px);
+    padding: 20px;
+  }
+  .overlay.hidden { display: none; }
+
+  /* MODAL */
+  .modal {
+    background: var(--surface);
+    border: 1px solid var(--border);
+    border-radius: 16px;
+    padding: 28px;
+    width: 100%;
+    max-width: 480px;
+    box-shadow: var(--shadow);
+    animation: slideUp 0.2s ease;
+  }
+  @keyframes slideUp {
+    from { transform: translateY(20px); opacity: 0; }
+    to { transform: translateY(0); opacity: 1; }
+  }
+  .modal h2 {
+    font-family: 'DM Serif Display', serif;
+    font-size: 18px;
+    margin-bottom: 20px;
+    color: var(--text);
+  }
+  .modal.retrait-modal h2 { color: var(--retrait-text); }
+
+  /* FORM */
+  .form-grid {
+    display: grid;
+    grid-template-columns: 1fr 1fr;
+    gap: 12px;
+  }
+  .form-grid .full { grid-column: 1 / -1; }
+  .form-group { display: flex; flex-direction: column; gap: 5px; }
+  .form-group label {
+    font-size: 11px;
+    color: var(--muted);
+    text-transform: uppercase;
+    letter-spacing: 0.07em;
+    font-weight: 500;
+  }
+  .form-group input, .form-group select, .form-group textarea {
+    background: var(--bg);
+    border: 1px solid var(--border);
+    border-radius: 8px;
+    color: var(--text);
+    font-family: 'DM Sans', sans-serif;
+    font-size: 14px;
+    padding: 9px 12px;
+    transition: border-color 0.15s;
+    outline: none;
+    width: 100%;
+  }
+  .form-group input:focus, .form-group select:focus, .form-group textarea:focus {
+    border-color: var(--accent);
+  }
+  .form-group textarea { resize: vertical; min-height: 70px; }
+  .form-group select option { background: var(--surface); }
+
+  .currency-preview {
+    margin-top: 8px;
+    padding: 10px 12px;
+    background: var(--surface2);
+    border-radius: 8px;
+    font-size: 13px;
+    color: var(--accent);
+    text-align: center;
+    min-height: 36px;
+  }
+
+  .modal-footer {
+    display: flex;
+    gap: 10px;
+    justify-content: flex-end;
+    margin-top: 20px;
+  }
+
+  /* TABLE AREA */
+  .table-wrap {
+    padding: 0 28px 28px;
+  }
+
+  /* DAY SEPARATOR */
+  .day-sep {
+    display: flex;
+    align-items: center;
+    gap: 16px;
+    padding: 28px 0 12px;
+  }
+  .day-sep-line {
+    flex: 1;
+    height: 1px;
+    background: var(--day-line);
+  }
+  .day-sep-label {
+    font-family: 'DM Serif Display', serif;
+    font-size: 15px;
+    color: var(--accent);
+    white-space: nowrap;
+    display: flex;
+    align-items: center;
+    gap: 8px;
+  }
+  .day-sep-total {
+    font-size: 12px;
+    color: var(--muted);
+    font-family: 'DM Sans', sans-serif;
+    font-style: normal;
+  }
+
+  /* ROWS TABLE */
+  .entries-table {
+    width: 100%;
+    border-collapse: collapse;
+  }
+  .entries-table th {
+    font-size: 10px;
+    color: var(--muted);
+    text-transform: uppercase;
+    letter-spacing: 0.08em;
+    text-align: left;
+    padding: 6px 10px;
+    border-bottom: 1px solid var(--border);
+    font-weight: 500;
+  }
+  .entries-table th.right { text-align: right; }
+
+  /* EXPENSE ROW */
+  .entry-row {
+    border-bottom: 1px solid var(--border);
+    cursor: pointer;
+    transition: background 0.1s;
+  }
+  .entry-row:hover { background: var(--surface2); }
+  .entry-row td {
+    padding: 11px 10px;
+    vertical-align: middle;
+  }
+  .entry-row.expanded { background: var(--surface2); }
+
+  /* RETRAIT ROW */
+  .entry-row.retrait {
+    background: var(--retrait-bg);
+    border-color: var(--retrait-border);
+  }
+  .entry-row.retrait:hover { background: #1c3022; }
+  .entry-row.retrait td { color: var(--retrait-text); }
+
+  /* NOTE EXPANDED ROW */
+  .note-row td {
+    padding: 0 10px 12px 36px;
+    color: var(--muted);
+    font-size: 13px;
+    font-style: italic;
+    background: var(--surface2);
+    border-bottom: 1px solid var(--border);
+  }
+  .note-row.retrait td {
+    background: var(--retrait-bg);
+    color: #5ab87a;
+  }
+  .note-row.hidden { display: none; }
+
+  /* CATEGORY BADGE */
+  .cat-badge {
+    display: inline-block;
+    padding: 2px 8px;
+    border-radius: 20px;
+    font-size: 11px;
+    font-weight: 500;
+  }
+  .cat-Hébergement { background: rgba(79,158,126,0.15); color: #6fcf97; }
+  .cat-Transport { background: rgba(107,158,232,0.15); color: #6b9ee8; }
+  .cat-Nourriture { background: rgba(232,160,69,0.15); color: #e8a045; }
+  .cat-Activités { background: rgba(160,120,212,0.15); color: #c39be0; }
+  .cat-Shopping { background: rgba(232,124,107,0.15); color: #e87c6b; }
+  .cat-Retrait, .cat-Change { background: rgba(111,207,151,0.12); color: #6fcf97; }
+
+  /* PAYMENT BADGE */
+  .pay-badge {
+    font-size: 11px;
+    font-weight: 600;
+    padding: 2px 7px;
+    border-radius: 5px;
+  }
+  .pay-EUR { background: rgba(107,158,232,0.15); color: var(--EUR); }
+  .pay-Ar  { background: rgba(160,120,212,0.15); color: var(--Ar); }
+  .pay-CB  { background: rgba(232,124,107,0.15); color: var(--CB); }
+
+  /* AMOUNTS */
+  .amount-main { font-weight: 600; font-size: 14px; }
+  .amount-conv { font-size: 11px; color: var(--muted); }
+  .amount-cell { text-align: right; }
+
+  /* SOLDE CELL */
+  .solde-cell { text-align: right; }
+  .solde-val { font-weight: 600; font-size: 13px; }
+  .solde-val.ok { color: var(--accent2); }
+  .solde-val.warn { color: var(--accent); }
+  .solde-val.low { color: var(--red); }
+
+  /* RETRAIT BADGE */
+  .retrait-badge {
+    display: inline-flex;
+    align-items: center;
+    gap: 5px;
+    font-size: 12px;
+    color: var(--retrait-text);
+    font-weight: 500;
+  }
+
+  /* ACTIONS COL */
+  .actions-cell { text-align: right; white-space: nowrap; }
+
+  /* TOTAL BAR */
+  .total-bar {
+    margin-top: 32px;
+    border: 1px solid var(--border);
+    border-radius: 12px;
+    overflow: hidden;
+  }
+  .total-bar-header {
+    background: var(--surface2);
+    padding: 14px 20px;
+    font-size: 11px;
+    color: var(--muted);
+    text-transform: uppercase;
+    letter-spacing: 0.08em;
+    font-weight: 500;
+    border-bottom: 1px solid var(--border);
+  }
+  .total-bar-body {
+    display: grid;
+    grid-template-columns: repeat(auto-fit, minmax(150px, 1fr));
+    gap: 0;
+  }
+  .total-item {
+    padding: 16px 20px;
+    border-right: 1px solid var(--border);
+  }
+  .total-item:last-child { border-right: none; }
+  .total-item .t-label { font-size: 11px; color: var(--muted); margin-bottom: 4px; }
+  .total-item .t-val { font-size: 16px; font-weight: 600; }
+  .total-item .t-sub { font-size: 11px; color: var(--muted); margin-top: 2px; }
+
+  /* HISTORIQUE TAUX */
+  .taux-panel {
+    margin-top: 20px;
+    border: 1px solid var(--retrait-border);
+    border-radius: 12px;
+    overflow: hidden;
+    background: var(--retrait-bg);
+  }
+  .taux-panel-header {
+    padding: 12px 20px;
+    font-size: 11px;
+    color: var(--retrait-text);
+    text-transform: uppercase;
+    letter-spacing: 0.08em;
+    border-bottom: 1px solid var(--retrait-border);
+    display: flex;
+    align-items: center;
+    gap: 8px;
+  }
+  .taux-list { padding: 8px 0; }
+  .taux-item {
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    padding: 8px 20px;
+    font-size: 13px;
+    color: var(--retrait-text);
+    border-bottom: 1px solid rgba(45,92,58,0.3);
+  }
+  .taux-item:last-child { border-bottom: none; }
+  .taux-item .taux-date { color: var(--muted); font-size: 11px; }
+  .taux-item .taux-rate { font-weight: 600; color: #7dd9a3; }
+
+  /* EMPTY STATE */
+  .empty-state {
+    text-align: center;
+    padding: 60px 20px;
+    color: var(--muted);
+  }
+  .empty-state .emoji { font-size: 36px; margin-bottom: 12px; }
+  .empty-state p { font-size: 13px; }
+
+  /* TOOLTIP pour le taux utilisé */
+  .taux-hint {
+    font-size: 10px;
+    color: var(--muted);
+    font-style: italic;
+  }
+
+  /* RESPONSIVE */
+  @media (max-width: 700px) {
+    header { padding: 14px 16px 12px; }
+    .action-bar { padding: 12px 16px; }
+    .table-wrap { padding: 0 10px 20px; }
+    .entries-table th, .entry-row td { padding: 9px 6px; }
+    .form-grid { grid-template-columns: 1fr; }
+    .form-grid .full { grid-column: 1; }
+    .header-stats { gap: 14px; }
+  }
+</style>
+</head>
+<body>
+
+<!-- HEADER -->
+<header>
+  <div class="header-left">
+    <h1>🇲🇬 Madagascar — Carnet de dépenses</h1>
+    <p id="header-sub">Chargement…</p>
+  </div>
+  <div class="header-stats">
+    <div class="stat-box">
+      <div class="label">Total dépensé</div>
+      <div class="val orange" id="stat-total-eur">0,00 €</div>
+      <div style="font-size:11px;color:var(--muted)" id="stat-total-ar">0 Ar</div>
+    </div>
+    <div class="stat-box">
+      <div class="label">Espèces disponibles</div>
+      <div class="val green" id="stat-solde-eur">0,00 €</div>
+      <div style="font-size:11px;color:var(--muted)" id="stat-solde-ar">0 Ar</div>
+    </div>
+    <div class="stat-box">
+      <div class="label">Entrées (retraits)</div>
+      <div class="val" id="stat-retraits">0,00 €</div>
+    </div>
+  </div>
+</header>
+
+<!-- ACTION BAR -->
+<div class="action-bar">
+  <button class="btn btn-primary" onclick="openModal('depense')">＋ Dépense</button>
+  <button class="btn btn-retrait" onclick="openModal('retrait')">↓ Retrait / Change</button>
+  <div class="spacer"></div>
+  <button class="btn btn-ghost" onclick="exportData()">⬇ Export JSON</button>
+  <label class="btn btn-ghost" style="cursor:pointer">
+    ⬆ Import JSON
+    <input type="file" accept=".json" onchange="importData(event)" style="display:none">
+  </label>
+</div>
+
+<!-- TABLE -->
+<div class="table-wrap" id="table-wrap">
+  <div class="empty-state" id="empty-state">
+    <div class="emoji">🌴</div>
+    <p>Aucune dépense pour l'instant.<br>Ajoutez votre premier retrait ou votre première dépense !</p>
+  </div>
+  <div id="entries-container"></div>
+  <div id="totals-area" style="display:none"></div>
+</div>
+
+<!-- MODAL DÉPENSE -->
+<div class="overlay hidden" id="overlay-depense">
+  <div class="modal">
+    <h2>＋ Nouvelle dépense</h2>
+    <div class="form-grid">
+      <div class="form-group">
+        <label>Date</label>
+        <input type="date" id="dep-date">
+      </div>
+      <div class="form-group">
+        <label>Catégorie</label>
+        <select id="dep-cat">
+          <option value="Hébergement">🏠 Hébergement</option>
+          <option value="Nourriture">🍽 Nourriture & Restos</option>
+          <option value="Transport">🚌 Transport</option>
+          <option value="Activités">🏄 Activités & Visites</option>
+          <option value="Shopping">🛍 Shopping & Souvenirs</option>
+        </select>
+      </div>
+      <div class="form-group full">
+        <label>Titre / Description</label>
+        <input type="text" id="dep-titre" placeholder="ex: Restaurant La Boussole">
+      </div>
+      <div class="form-group">
+        <label>Montant payé</label>
+        <input type="number" id="dep-montant" min="0" step="any" placeholder="0" oninput="updatePreview()">
+      </div>
+      <div class="form-group">
+        <label>Devise payée</label>
+        <select id="dep-devise" onchange="updatePreview()">
+          <option value="EUR">€ Euro</option>
+          <option value="Ar">Ar Ariary</option>
+          <option value="CB">💳 CB (€)</option>
+        </select>
+      </div>
+      <div class="form-group full">
+        <div class="currency-preview" id="dep-preview">Entrez un montant…</div>
+      </div>
+      <div class="form-group full">
+        <label>Note (optionnel — visible au clic)</label>
+        <textarea id="dep-note" placeholder="Détails, remarques, contexte…"></textarea>
+      </div>
+    </div>
+    <div class="modal-footer">
+      <button class="btn btn-ghost" onclick="closeModal('depense')">Annuler</button>
+      <button class="btn btn-primary" onclick="saveDepense()">Enregistrer</button>
+    </div>
+  </div>
+</div>
+
+<!-- MODAL RETRAIT/CHANGE -->
+<div class="overlay hidden" id="overlay-retrait">
+  <div class="modal retrait-modal">
+    <h2>↓ Retrait ou Change</h2>
+    <div class="form-grid">
+      <div class="form-group">
+        <label>Date</label>
+        <input type="date" id="ret-date">
+      </div>
+      <div class="form-group">
+        <label>Type</label>
+        <select id="ret-type" onchange="updateRetraitPreview()">
+          <option value="Retrait">Retrait DAB (Ar)</option>
+          <option value="Change">Change EUR → Ar</option>
+          <option value="RetraitEUR">Retrait DAB (€)</option>
+        </select>
+      </div>
+      <div class="form-group full">
+        <label>Description</label>
+        <input type="text" id="ret-desc" placeholder="ex: DAB BNI Antananarivo">
+      </div>
+      <div class="form-group">
+        <label>Montant en EUR</label>
+        <input type="number" id="ret-eur" min="0" step="any" placeholder="0" oninput="updateRetraitPreview()">
+      </div>
+      <div class="form-group">
+        <label>Taux utilisé (1 € = ? Ar)</label>
+        <input type="number" id="ret-taux" min="0" step="any" placeholder="ex: 4900" oninput="updateRetraitPreview()">
+      </div>
+      <div class="form-group full">
+        <div class="currency-preview" id="ret-preview">Entrez un montant et un taux…</div>
+      </div>
+      <div class="form-group full">
+        <label>Note (optionnel)</label>
+        <textarea id="ret-note" placeholder="Lieu, remarques…"></textarea>
+      </div>
+    </div>
+    <div class="modal-footer">
+      <button class="btn btn-ghost" onclick="closeModal('retrait')">Annuler</button>
+      <button class="btn btn-retrait" onclick="saveRetrait()">Enregistrer</button>
+    </div>
+  </div>
+</div>
+
+<script>
+// ─── STATE ───────────────────────────────────────────────────────
+let entries = [];
+let editingId = null;
+
+// ─── STORAGE ─────────────────────────────────────────────────────
+function save() {
+  localStorage.setItem('mdg_entries', JSON.stringify(entries));
+}
+function load() {
+  const d = localStorage.getItem('mdg_entries');
+  if (d) entries = JSON.parse(d);
+}
+
+// ─── UTILS ───────────────────────────────────────────────────────
+function uid() { return Date.now() + Math.random().toString(36).slice(2); }
+function today() { return new Date().toISOString().slice(0, 10); }
+function fmtEUR(n) { return n.toLocaleString('fr-FR', {minimumFractionDigits:2, maximumFractionDigits:2}) + ' €'; }
+function fmtAr(n) { return Math.round(n).toLocaleString('fr-FR') + ' Ar'; }
+function fmtDate(d) {
+  const dt = new Date(d + 'T00:00:00');
+  return dt.toLocaleDateString('fr-FR', {weekday:'long', day:'numeric', month:'long', year:'numeric'});
+}
+
+function getLastTaux() {
+  const retraits = entries.filter(e => e.kind === 'retrait' && e.taux && e.type !== 'RetraitEUR');
+  if (retraits.length === 0) return 4900;
+  return retraits[retraits.length - 1].taux;
+}
+
+function toEUR(montant, devise, taux) {
+  if (devise === 'EUR' || devise === 'CB') return montant;
+  if (devise === 'Ar') return montant / (taux || getLastTaux());
+  return montant;
+}
+function toAr(montant, devise, taux) {
+  if (devise === 'Ar') return montant;
+  if (devise === 'EUR' || devise === 'CB') return montant * (taux || getLastTaux());
+  return montant;
+}
+
+// ─── COMPUTE RUNNING SOLDE ───────────────────────────────────────
+function computeSoldes() {
+  const sorted = [...entries].sort((a,b) => a.date < b.date ? -1 : a.date > b.date ? 1 : a.ts - b.ts);
+  let soldeEUR = 0;
+  let soldeAr = 0;
+
+  sorted.forEach(e => {
+    if (e.kind === 'retrait') {
+      if (e.type === 'RetraitEUR') {
+        soldeEUR += e.eur;
+      } else {
+        soldeEUR -= e.eur;
+        soldeAr  += e.ar;
+      }
+      e.soldeEUR = soldeEUR;
+      e.soldeAr  = soldeAr;
+    } else {
+      if (e.devise === 'EUR') soldeEUR -= e.montant;
+      else if (e.devise === 'Ar') soldeAr -= e.montant;
+      else if (e.devise === 'CB') { /* CB distinct */ }
+      e.soldeEUR = soldeEUR;
+      e.soldeAr  = soldeAr;
+    }
+  });
+  // copy back
+  sorted.forEach(e => {
+    const orig = entries.find(x => x.id === e.id);
+    if (orig) { orig.soldeEUR = e.soldeEUR; orig.soldeAr = e.soldeAr; }
+  });
+}
+
+// ─── MODAL OPEN/CLOSE ─────────────────────────────────────────────
+function openModal(type) {
+  const today_ = today();
+  if (type === 'depense') {
+    document.getElementById('dep-date').value = today_;
+    document.getElementById('dep-montant').value = '';
+    document.getElementById('dep-titre').value = '';
+    document.getElementById('dep-note').value = '';
+    document.getElementById('dep-preview').textContent = 'Entrez un montant…';
+    document.getElementById('overlay-depense').classList.remove('hidden');
+    setTimeout(() => document.getElementById('dep-titre').focus(), 100);
+  } else {
+    document.getElementById('ret-date').value = today_;
+    document.getElementById('ret-eur').value = '';
+    document.getElementById('ret-taux').value = getLastTaux();
+    document.getElementById('ret-desc').value = '';
+    document.getElementById('ret-note').value = '';
+    document.getElementById('ret-preview').textContent = 'Entrez un montant et un taux…';
+    document.getElementById('overlay-retrait').classList.remove('hidden');
+    setTimeout(() => document.getElementById('ret-eur').focus(), 100);
+  }
+}
+function closeModal(type) {
+  document.getElementById('overlay-' + type).classList.add('hidden');
+  editingId = null;
+}
+// close on overlay click
+document.getElementById('overlay-depense').addEventListener('click', function(e) {
+  if (e.target === this) closeModal('depense');
+});
+document.getElementById('overlay-retrait').addEventListener('click', function(e) {
+  if (e.target === this) closeModal('retrait');
+});
+
+// ─── PREVIEW ─────────────────────────────────────────────────────
+function updatePreview() {
+  const m = parseFloat(document.getElementById('dep-montant').value) || 0;
+  const dev = document.getElementById('dep-devise').value;
+  const taux = getLastTaux();
+  const el = document.getElementById('dep-preview');
+  if (!m) { el.textContent = 'Entrez un montant…'; return; }
+  if (dev === 'EUR') {
+    el.textContent = fmtEUR(m) + ' → ' + fmtAr(m * taux) + ' (taux : 1€ = ' + taux + ' Ar)';
+  } else if (dev === 'CB') {
+    el.textContent = fmtEUR(m) + ' (CB) → ' + fmtAr(m * taux);
+  } else {
+    el.textContent = fmtAr(m) + ' → ' + fmtEUR(m / taux) + ' (taux : 1€ = ' + taux + ' Ar)';
+  }
+}
+
+function updateRetraitPreview() {
+  const eur = parseFloat(document.getElementById('ret-eur').value) || 0;
+  const taux = parseFloat(document.getElementById('ret-taux').value) || 0;
+  const type = document.getElementById('ret-type').value;
+  const el = document.getElementById('ret-preview');
+  if (!eur) { el.textContent = 'Entrez un montant et un taux…'; return; }
+  if (type === 'RetraitEUR') {
+    el.textContent = '+ ' + fmtEUR(eur) + ' retiré (€)';
+  } else if (taux) {
+    el.textContent = fmtEUR(eur) + ' → ' + fmtAr(eur * taux) + ' (taux : 1€ = ' + taux + ' Ar)';
+  } else {
+    el.textContent = fmtEUR(eur) + ' — entrez le taux pour voir la conversion';
+  }
+}
+
+// ─── SAVE DEPENSE ─────────────────────────────────────────────────
+function saveDepense() {
+  const date = document.getElementById('dep-date').value;
+  const cat  = document.getElementById('dep-cat').value;
+  const titre = document.getElementById('dep-titre').value.trim();
+  const montant = parseFloat(document.getElementById('dep-montant').value);
+  const devise = document.getElementById('dep-devise').value;
+  const note = document.getElementById('dep-note').value.trim();
+
+  if (!date || !titre || isNaN(montant) || montant <= 0) {
+    alert('Veuillez remplir la date, le titre et le montant.');
+    return;
+  }
+
+  const taux = getLastTaux();
+  const entry = {
+    id: editingId || uid(),
+    ts: Date.now(),
+    kind: 'depense',
+    date, cat, titre, montant, devise, note, taux,
+    eurEquiv: toEUR(montant, devise, taux),
+    arEquiv: toAr(montant, devise, taux),
+  };
+
+  if (editingId) {
+    const idx = entries.findIndex(e => e.id === editingId);
+    if (idx !== -1) entries[idx] = entry;
+  } else {
+    entries.push(entry);
+  }
+  save();
+  closeModal('depense');
+  render();
+}
+
+// ─── SAVE RETRAIT ─────────────────────────────────────────────────
+function saveRetrait() {
+  const date = document.getElementById('ret-date').value;
+  const type = document.getElementById('ret-type').value;
+  const desc = document.getElementById('ret-desc').value.trim();
+  const eur  = parseFloat(document.getElementById('ret-eur').value);
+  const taux = parseFloat(document.getElementById('ret-taux').value);
+  const note = document.getElementById('ret-note').value.trim();
+
+  if (!date || isNaN(eur) || eur <= 0 || (type !== 'RetraitEUR' && (!taux || taux <= 0))) {
+    alert('Veuillez remplir la date, le montant et le taux.');
+    return;
+  }
+
+  const ar = type === 'RetraitEUR' ? 0 : Math.round(eur * taux);
+  const entry = {
+    id: editingId || uid(),
+    ts: Date.now(),
+    kind: 'retrait',
+    date, type, desc: desc || type, eur, taux: type === 'RetraitEUR' ? null : taux, ar, note,
+  };
+
+  if (editingId) {
+    const idx = entries.findIndex(e => e.id === editingId);
+    if (idx !== -1) entries[idx] = entry;
+  } else {
+    entries.push(entry);
+  }
+  save();
+  closeModal('retrait');
+  render();
+}
+
+// ─── DELETE ───────────────────────────────────────────────────────
+function deleteEntry(id) {
+  if (!confirm('Supprimer cette entrée ?')) return;
+  entries = entries.filter(e => e.id !== id);
+  save();
+  render();
+}
+
+// ─── TOGGLE NOTE ─────────────────────────────────────────────────
+function toggleNote(id) {
+  const row = document.getElementById('note-' + id);
+  if (row) row.classList.toggle('hidden');
+}
+
+// ─── RENDER ───────────────────────────────────────────────────────
+function render() {
+  computeSoldes();
+  const container = document.getElementById('entries-container');
+  const emptyState = document.getElementById('empty-state');
+  const totalsArea = document.getElementById('totals-area');
+
+  if (entries.length === 0) {
+    emptyState.style.display = '';
+    container.innerHTML = '';
+    totalsArea.style.display = 'none';
+    updateStats();
+    return;
+  }
+  emptyState.style.display = 'none';
+  totalsArea.style.display = '';
+
+  // Sort
+  const sorted = [...entries].sort((a,b) => a.date < b.date ? -1 : a.date > b.date ? 1 : a.ts - b.ts);
+
+  // Group by day
+  const byDay = {};
+  sorted.forEach(e => {
+    if (!byDay[e.date]) byDay[e.date] = [];
+    byDay[e.date].push(e);
+  });
+
+  let html = `<table class="entries-table">
+    <thead><tr>
+      <th>Titre</th>
+      <th>Catégorie</th>
+      <th>Paiement</th>
+      <th class="right">Montant payé</th>
+      <th class="right">Équivalent</th>
+      <th class="right">Solde restant</th>
+      <th></th>
+    </tr></thead>
+    <tbody>`;
+
+  Object.keys(byDay).sort().forEach(date => {
+    const dayEntries = byDay[date];
+    // Day total depenses
+    const dayTotal = dayEntries.filter(e=>e.kind==='depense').reduce((s,e)=>s+e.eurEquiv,0);
+    html += `</tbody></table>
+    <div class="day-sep">
+      <div class="day-sep-line"></div>
+      <div class="day-sep-label">
+        📅 ${fmtDate(date)}
+        ${dayTotal > 0 ? `<span class="day-sep-total">— ${fmtEUR(dayTotal)}</span>` : ''}
+      </div>
+      <div class="day-sep-line"></div>
+    </div>
+    <table class="entries-table"><tbody>`;
+
+    dayEntries.forEach(e => {
+      if (e.kind === 'retrait') {
+        const isEUR = e.type === 'RetraitEUR';
+        const label = e.type === 'Change' ? '💱 Change' : isEUR ? '🏧 Retrait €' : '🏧 Retrait Ar';
+        const montantStr = isEUR ? fmtEUR(e.eur) : fmtEUR(e.eur);
+        const equivStr   = isEUR ? '→ cash EUR' : '→ ' + fmtAr(e.ar);
+        const tauxStr    = isEUR ? '' : `<div class="taux-hint">1€ = ${e.taux} Ar</div>`;
+        const soldeDisp  = `<div class="solde-val ok">${fmtEUR(e.soldeEUR)}</div><div class="amount-conv">${fmtAr(e.soldeAr)}</div>`;
+
+        html += `<tr class="entry-row retrait" onclick="toggleNote('${e.id}')">
+          <td><div class="retrait-badge">${label}</div><div style="font-size:12px;color:var(--muted);margin-top:2px">${e.desc}</div></td>
+          <td><span class="cat-badge cat-${e.type}">${label}</span></td>
+          <td><span class="pay-badge pay-Ar">Cash</span></td>
+          <td class="amount-cell"><div class="amount-main">${montantStr}</div>${tauxStr}</td>
+          <td class="amount-cell"><div class="amount-main">${equivStr}</div></td>
+          <td class="solde-cell">${soldeDisp}</td>
+          <td class="actions-cell"><button class="btn btn-danger" onclick="event.stopPropagation();deleteEntry('${e.id}')">✕</button></td>
+        </tr>`;
+        if (e.note) {
+          html += `<tr class="note-row retrait hidden" id="note-${e.id}"><td colspan="7">💬 ${e.note}</td></tr>`;
+        } else {
+          html += `<tr class="note-row retrait hidden" id="note-${e.id}"><td colspan="7" style="color:var(--muted);font-style:italic">Aucune note.</td></tr>`;
+        }
+      } else {
+        const payClass = `pay-${e.devise === 'CB' ? 'CB' : e.devise}`;
+        const payLabel = e.devise === 'EUR' ? '€ Cash' : e.devise === 'Ar' ? 'Ar Cash' : '💳 CB';
+        const mainAmt = e.devise === 'Ar' ? fmtAr(e.montant) : fmtEUR(e.montant);
+        const convAmt = e.devise === 'Ar' ? fmtEUR(e.eurEquiv) : fmtAr(e.arEquiv);
+        const soldeEur = e.soldeEUR || 0;
+        const soldeClass = soldeEur > 50 ? 'ok' : soldeEur > 10 ? 'warn' : 'low';
+        const soldeDisp = e.devise === 'CB'
+          ? `<div class="solde-val ok">${fmtEUR(e.soldeEUR)}</div><div class="amount-conv">${fmtAr(e.soldeAr)}</div>`
+          : `<div class="solde-val ${soldeClass}">${fmtEUR(e.soldeEUR)}</div><div class="amount-conv">${fmtAr(e.soldeAr)}</div>`;
+        const hasNote = !!e.note;
+        const noteIcon = hasNote ? ' 📝' : '';
+
+        html += `<tr class="entry-row" onclick="toggleNote('${e.id}')">
+          <td><div>${e.titre}${noteIcon}</div><div style="font-size:11px;color:var(--muted);margin-top:2px">${fmtDate(e.date).split(' ').slice(0,1).join('')}</div></td>
+          <td><span class="cat-badge cat-${e.cat}">${catEmoji(e.cat)} ${e.cat}</span></td>
+          <td><span class="pay-badge ${payClass}">${payLabel}</span></td>
+          <td class="amount-cell"><div class="amount-main">${mainAmt}</div></td>
+          <td class="amount-cell"><div class="amount-conv">${convAmt}</div></td>
+          <td class="solde-cell">${soldeDisp}</td>
+          <td class="actions-cell"><button class="btn btn-danger" onclick="event.stopPropagation();deleteEntry('${e.id}')">✕</button></td>
+        </tr>`;
+        html += `<tr class="note-row hidden" id="note-${e.id}"><td colspan="7">
+          ${hasNote ? '💬 ' + e.note : '<span style="color:var(--muted);font-style:italic">Aucune note pour cette dépense.</span>'}
+        </td></tr>`;
+      }
+    });
+  });
+
+  html += `</tbody></table>`;
+  container.innerHTML = html;
+
+  renderTotals(sorted);
+  updateStats();
+}
+
+function catEmoji(cat) {
+  const map = {Hébergement:'🏠',Nourriture:'🍽',Transport:'🚌',Activités:'🏄',Shopping:'🛍'};
+  return map[cat] || '';
+}
+
+function renderTotals(sorted) {
+  const depenses = sorted.filter(e => e.kind === 'depense');
+  const totalEUR = depenses.reduce((s,e) => s + e.eurEquiv, 0);
+
+  const byCat = {};
+  depenses.forEach(e => {
+    byCat[e.cat] = (byCat[e.cat] || 0) + e.eurEquiv;
+  });
+  const byPay = {EUR:0, Ar:0, CB:0};
+  depenses.forEach(e => {
+    byPay[e.devise] = (byPay[e.devise] || 0) + e.eurEquiv;
+  });
+
+  const totalRetraits = sorted.filter(e=>e.kind==='retrait').reduce((s,e)=>s+e.eur,0);
+
+  // Taux history
+  const tauxHistory = sorted.filter(e => e.kind === 'retrait' && e.taux);
+
+  let tauxHtml = '';
+  if (tauxHistory.length > 0) {
+    tauxHtml = `<div class="taux-panel">
+      <div class="taux-panel-header">🔄 Historique des taux utilisés</div>
+      <div class="taux-list">`;
+    tauxHistory.forEach(e => {
+      tauxHtml += `<div class="taux-item">
+        <span>${e.desc || e.type} <span class="taux-date">${fmtDate(e.date)}</span></span>
+        <span class="taux-rate">1 € = ${e.taux.toLocaleString('fr-FR')} Ar</span>
+      </div>`;
+    });
+    tauxHtml += `</div></div>`;
+  }
+
+  const catRows = Object.entries(byCat).map(([c,v]) =>
+    `<div class="total-item"><div class="t-label">${catEmoji(c)} ${c}</div><div class="t-val" style="color:var(--accent)">${fmtEUR(v)}</div></div>`
+  ).join('');
+
+  document.getElementById('totals-area').innerHTML = `
+    <div class="total-bar" style="margin-top:32px">
+      <div class="total-bar-header">Récapitulatif global</div>
+      <div class="total-bar-body">
+        <div class="total-item">
+          <div class="t-label">💸 Total dépensé</div>
+          <div class="t-val" style="color:var(--accent)">${fmtEUR(totalEUR)}</div>
+          <div class="t-sub">${depenses.length} dépense${depenses.length>1?'s':''}</div>
+        </div>
+        <div class="total-item">
+          <div class="t-label">💳 Dont CB</div>
+          <div class="t-val" style="color:var(--CB)">${fmtEUR(byPay.CB||0)}</div>
+        </div>
+        <div class="total-item">
+          <div class="t-label">💶 Dont cash €</div>
+          <div class="t-val" style="color:var(--EUR)">${fmtEUR(byPay.EUR||0)}</div>
+        </div>
+        <div class="total-item">
+          <div class="t-label">💜 Dont cash Ar</div>
+          <div class="t-val" style="color:var(--Ar)">${fmtEUR(byPay.Ar||0)}</div>
+        </div>
+        <div class="total-item">
+          <div class="t-label">🏧 Total retiré/changé</div>
+          <div class="t-val" style="color:var(--accent2)">${fmtEUR(totalRetraits)}</div>
+        </div>
+      </div>
+    </div>
+    <div class="total-bar" style="margin-top:16px">
+      <div class="total-bar-header">Par catégorie</div>
+      <div class="total-bar-body">${catRows || '<div class="total-item"><div class="t-label" style="color:var(--muted)">—</div></div>'}</div>
+    </div>
+    ${tauxHtml}
+  `;
+}
+
+function updateStats() {
+  const depenses = entries.filter(e => e.kind === 'depense');
+  const totalEUR = depenses.reduce((s,e) => s + (e.eurEquiv||0), 0);
+  const totalAr  = depenses.reduce((s,e) => s + (e.arEquiv||0), 0);
+  const totalRetraits = entries.filter(e=>e.kind==='retrait').reduce((s,e)=>s+e.eur,0);
+
+  // Last solde
+  const sorted = [...entries].sort((a,b) => a.date<b.date?-1:a.date>b.date?1:a.ts-b.ts);
+  const last = sorted[sorted.length-1];
+  const soldeEUR = last ? (last.soldeEUR||0) : 0;
+  const soldeAr  = last ? (last.soldeAr||0) : 0;
+
+  document.getElementById('stat-total-eur').textContent = fmtEUR(totalEUR);
+  document.getElementById('stat-total-ar').textContent  = fmtAr(totalAr);
+  document.getElementById('stat-solde-eur').textContent = fmtEUR(soldeEUR);
+  document.getElementById('stat-solde-ar').textContent  = fmtAr(soldeAr);
+  document.getElementById('stat-retraits').textContent  = fmtEUR(totalRetraits);
+
+  const n = entries.filter(e=>e.kind==='depense').length;
+  document.getElementById('header-sub').textContent = `${n} dépense${n>1?'s':''} enregistrée${n>1?'s':''}`;
+}
+
+// ─── EXPORT / IMPORT ─────────────────────────────────────────────
+function exportData() {
+  const blob = new Blob([JSON.stringify(entries, null, 2)], {type:'application/json'});
+  const a = document.createElement('a');
+  a.href = URL.createObjectURL(blob);
+  a.download = 'madagascar-depenses.json';
+  a.click();
+}
+function importData(e) {
+  const file = e.target.files[0];
+  if (!file) return;
+  const reader = new FileReader();
+  reader.onload = ev => {
+    try {
+      const data = JSON.parse(ev.target.result);
+      if (Array.isArray(data)) {
+        entries = data;
+        save();
+        render();
+        alert('Import réussi ! ' + data.length + ' entrées chargées.');
+      } else { alert('Format invalide.'); }
+    } catch { alert('Fichier JSON invalide.'); }
+  };
+  reader.readAsText(file);
+  e.target.value = '';
+}
+
+// ─── INIT ─────────────────────────────────────────────────────────
+load();
+render();
+</script>
+</body>
+</html>
